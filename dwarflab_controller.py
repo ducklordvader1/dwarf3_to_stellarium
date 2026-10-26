@@ -217,6 +217,34 @@ def _dvarint(buf, pos):
         s += 7
     return r, pos
 
+def _decode_fields(buf):
+    """
+    Decode a flat proto3 message into {field_number: value}.
+    Varints -> int, 64-bit -> float(double), 32-bit -> int, length-delim -> bytes.
+    Unknown/garbage trailing data stops the scan rather than raising.
+    Use this instead of _dvarint(data, <fixed offset>) so field order and
+    multi-byte tags/values are handled correctly.
+    """
+    out = {}
+    i = 0
+    n = len(buf)
+    while i < n:
+        tag, i = _dvarint(buf, i)
+        fn = tag >> 3; wt = tag & 7
+        if wt == 0:
+            v, i = _dvarint(buf, i); out[fn] = v
+        elif wt == 1:
+            if i + 8 > n: break
+            out[fn] = struct.unpack_from("<d", buf, i)[0]; i += 8
+        elif wt == 2:
+            ln, i = _dvarint(buf, i); out[fn] = buf[i:i+ln]; i += ln
+        elif wt == 5:
+            if i + 4 > n: break
+            out[fn] = struct.unpack_from("<i", buf, i)[0]; i += 4
+        else:
+            break
+    return out
+
 # ── Packet builder / parser ───────────────────────────────────────────────────
 def build_ws_packet(cmd, data=b"", device_id=1, client_id=""):
     mid = _module_for_cmd(cmd)
@@ -306,8 +334,10 @@ class DwarfLab:
         self.state = {
             "connected": False,
             "battery": None,
-            "temperature": None,
-            "cmos_temp": None,
+            "temperature": None,        # raw units from CMD_NOTIFY_TEMPERATURE (field 2)
+            "cmos_temp": None,          # raw units from CMD_NOTIFY_CMOS_TEMPERATURE (field 2)
+            "sdcard_available": None,   # from 15203 field 1 (SDCARD_INFO available_size)
+            "sdcard_total": None,       # from 15203 field 2 (SDCARD_INFO total_size)
             "wide_focus_position": None,  # NEW
             "lens_defog": None,            # device: lens defog heater
             "auto_cooling": None,          # device: CMOS cooling fan
@@ -389,19 +419,30 @@ class DwarfLab:
             except: pass
         # Temperatures
         elif cmd == CMD_NOTIFY_TEMPERATURES:
+            # NOTE: 15203 maps to CMD_NOTIFY_SDCARD_INFO in the APK (fields:
+            # available_size=1, total_size=2). Whether any firmware actually
+            # emits dual temperatures here is unverified, so we record the raw
+            # field values under sdcard_* and leave temperature/cmos_temp to the
+            # dedicated 15243/15292 notifications below.
             try:
-                i = 0
-                tag, i = _dvarint(data, i); v1, i = _dvarint(data, i)
-                tag, i = _dvarint(data, i); v2, i = _dvarint(data, i)
-                self.state["temperature"] = round(v1 / 10.0, 1)
-                self.state["cmos_temp"]   = round(v2 / 10.0, 1)
-            except: pass
+                flds = _decode_fields(data)
+                if 1 in flds: self.state["sdcard_available"] = flds[1]
+                if 2 in flds: self.state["sdcard_total"]     = flds[2]
+            except Exception: pass
         elif cmd == CMD_NOTIFY_TEMPERATURE:
-            try: v, _ = _dvarint(data, 1); self.state["temperature"] = v
-            except: pass
+            # Temperature message = { code:int32 (field 1), temperature:int32 (field 2) }.
+            # The value lives in field 2; field 1 is a status code. Raw units
+            # (no scaling applied - confirm against the app before dividing).
+            try:
+                t = _decode_fields(data).get(2)
+                if t is not None: self.state["temperature"] = t
+            except Exception: pass
         elif cmd == CMD_NOTIFY_CMOS_TEMPERATURE:
-            try: v, _ = _dvarint(data, 1); self.state["cmos_temp"] = v
-            except: pass
+            # CmosTemperature message = { code (field 1), temperature (field 2) }.
+            try:
+                t = _decode_fields(data).get(2)
+                if t is not None: self.state["cmos_temp"] = t
+            except Exception: pass
         # Focus positions
         elif cmd == CMD_NOTIFY_FOCUS_POSITION:
             try: v, _ = _dvarint(data, 1); self.state["focus_position"] = v

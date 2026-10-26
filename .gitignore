@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Local editor backups
+*.bak
+*.bak_*
+*.orig
+
+# Runtime artefacts
+*.log
+*.pid
+
+# OS cruft
+.DS_Store
+Thumbs.db

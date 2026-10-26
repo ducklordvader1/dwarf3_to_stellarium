@@ -120,13 +120,12 @@ dwarf32stellarium/
 ## Controller / protocol
 
 `dwarflab_controller.py` is the shared DwarfLab SDK, kept in sync with the
-`dwarf_web` project. It is reverse-engineered from the official
-`com.convergence.dwarflab` app and verified against the **October 2026**
-APK release. The bridge uses only a stable subset of the SDK
+`dwarf_web` project. It targets the **October 2026** DWARF 3 firmware
+generation. The bridge uses only a stable subset of the SDK
 (`connect`, `sync_time`, `get_device_state`, `set_location`,
 `one_click_goto_dso`, `stop_goto`, `start_tracking`, `stop_tracking`); these
-command numbers and signatures are unchanged across recent APK updates, so
-refreshing the controller does not require bridge changes.
+command numbers and signatures are unchanged across recent firmware updates,
+so refreshing the controller does not require bridge changes.
 
 When updating `dwarflab_controller.py`, copy the current version from
 `../dwarf_web/` so both projects stay on the same protocol map.

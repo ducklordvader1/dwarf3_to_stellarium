@@ -275,11 +275,18 @@ def parse_ws_packet(raw):
             elif wt == 1: i += 8
             elif wt == 5: i += 4
             else: break
-        except: break
+        except Exception: break
     return r
 
 # ── Payload builders ──────────────────────────────────────────────────────────
-def p_int(v): return _field(1, 0, v) if v != 0 else b""
+def p_int(v):
+    # Single int32 field-1 payload. v==0 intentionally yields an EMPTY payload:
+    # proto3's default for a missing int32 is 0, so an empty message decodes to
+    # {field1: 0} on the device - i.e. 'off' / index 0. This keeps packets minimal
+    # and matches how the app omits default-valued fields. (It does mean the wire
+    # form can't distinguish an explicit 0 from an unset field, which is fine here
+    # because every command using p_int treats 0 as the real default.)
+    return _field(1, 0, v) if v != 0 else b""
 
 def p_goto_dso(ra, dec, name="", goto_only=False):
     """
@@ -413,10 +420,12 @@ class DwarfLab:
         # Battery
         if cmd == CMD_NOTIFY_ELE:
             try: v, _ = _dvarint(data, 1); self.state["battery"] = v
-            except: pass
+            except Exception as e:
+                log.debug("notify decode failed (cmd=%s): %s", cmd, e)
         elif cmd == CMD_NOTIFY_ELE_STATUS:
             try: v, _ = _dvarint(data, 1); self.state["battery"] = v
-            except: pass
+            except Exception as e:
+                log.debug("notify decode failed (cmd=%s): %s", cmd, e)
         # Temperatures
         elif cmd == CMD_NOTIFY_TEMPERATURES:
             # NOTE: 15203 maps to CMD_NOTIFY_SDCARD_INFO in the APK (fields:
@@ -446,36 +455,46 @@ class DwarfLab:
         # Focus positions
         elif cmd == CMD_NOTIFY_FOCUS_POSITION:
             try: v, _ = _dvarint(data, 1); self.state["focus_position"] = v
-            except: pass
+            except Exception as e:
+                log.debug("notify decode failed (cmd=%s): %s", cmd, e)
         elif cmd == CMD_NOTIFY_WIDE_FOCUS_POSITION:    # NEW
             try: v, _ = _dvarint(data, 1); self.state["wide_focus_position"] = v
-            except: pass
+            except Exception as e:
+                log.debug("notify decode failed (cmd=%s): %s", cmd, e)
         # Device state notifications (NEW)
         elif cmd == CMD_NOTIFY_LENS_DEFOG_STATE:
             try: v, _ = _dvarint(data, 1); self.state["lens_defog"] = bool(v)
-            except: pass
+            except Exception as e:
+                log.debug("notify decode failed (cmd=%s): %s", cmd, e)
         elif cmd == CMD_NOTIFY_AUTO_COOLING_STATE:
             try: v, _ = _dvarint(data, 1); self.state["auto_cooling"] = bool(v)
-            except: pass
+            except Exception as e:
+                log.debug("notify decode failed (cmd=%s): %s", cmd, e)
         elif cmd == CMD_NOTIFY_ANTI_TANGLE_STATE:
             try: v, _ = _dvarint(data, 1); self.state["anti_tangle"] = bool(v)
-            except: pass
+            except Exception as e:
+                log.debug("notify decode failed (cmd=%s): %s", cmd, e)
         elif cmd == CMD_NOTIFY_AUTO_SHUTDOWN_STATE:
             try: v, _ = _dvarint(data, 1); self.state["auto_shutdown"] = bool(v)
-            except: pass
+            except Exception as e:
+                log.debug("notify decode failed (cmd=%s): %s", cmd, e)
         # GoTo / tracking / stacking
         elif cmd == CMD_NOTIFY_STATE_ASTRO_GOTO:
             try: v, _ = _dvarint(data, 1); self.state["goto_state"] = v
-            except: pass
+            except Exception as e:
+                log.debug("notify decode failed (cmd=%s): %s", cmd, e)
         elif cmd == CMD_NOTIFY_STATE_ASTRO_TRACKING:
             try: v, _ = _dvarint(data, 1); self.state["tracking"] = bool(v)
-            except: pass
+            except Exception as e:
+                log.debug("notify decode failed (cmd=%s): %s", cmd, e)
         elif cmd == CMD_NOTIFY_STATE_CAPTURE_RAW_LIVE_STACKING:
             try: v, _ = _dvarint(data, 1); self.state["stacking"] = bool(v)
-            except: pass
+            except Exception as e:
+                log.debug("notify decode failed (cmd=%s): %s", cmd, e)
         elif cmd == CMD_NOTIFY_PROGRASS_CAPTURE_RAW_LIVE_STACKING:
             try: v, _ = _dvarint(data, 1); self.state["stacking_progress"] = v
-            except: pass
+            except Exception as e:
+                log.debug("notify decode failed (cmd=%s): %s", cmd, e)
 
         if self.on_notify: self.on_notify(pkt)
 

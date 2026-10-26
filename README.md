@@ -157,6 +157,9 @@ generation. The bridge uses only a stable subset of the SDK
 command numbers and signatures are unchanged across recent firmware updates,
 so refreshing the controller does not require bridge changes.
 
+When updating `dwarflab_controller.py`, copy the current version from
+`../dwarf_web/` so both projects stay on the same protocol map.
+
 ## Coordinate system
 
 All coordinates are **J2000 RA/Dec in decimal degrees**:

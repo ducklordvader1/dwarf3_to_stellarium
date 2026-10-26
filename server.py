@@ -54,7 +54,6 @@ import os
 import secrets
 import socket
 import struct
-import sys
 import threading
 import time
 

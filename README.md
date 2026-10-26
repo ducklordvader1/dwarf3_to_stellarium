@@ -17,6 +17,11 @@ When Stellarium sends a slew command, the bridge triggers a one-click goto on th
 
 A lightweight **status dashboard** (Flask, port 5002) shows live telescope state and pointing coordinates.
 
+> **Security:** This bridge has no authentication, authorization, or
+> transport encryption of any kind — neither the Stellarium TCP port, the
+> status dashboard, nor the REST API. Run it only on an internal, trusted
+> network — never expose it directly to the public internet.
+
 ## Requirements
 
 - Python 3.8+

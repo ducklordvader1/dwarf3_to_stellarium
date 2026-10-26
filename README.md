@@ -54,6 +54,26 @@ python3 server.py 192.168.88.1 --lat 48.8566 --lon 2.3522 --alt 35
 
 > Setting `--lat` / `--lon` is recommended. The bridge sends your location to the Dwarf3 on connect, which improves goto accuracy.
 
+### Helper scripts
+
+Convenience start/stop wrappers are provided for both platforms. They run the
+bridge detached and log to a temp file; any extra arguments are forwarded to
+`server.py`.
+
+**Linux / macOS**
+
+```bash
+./start_bridge.sh 192.168.88.1 --lat 48.8566 --lon 2.3522 --alt 35
+./stop_bridge.sh
+```
+
+**Windows**
+
+```bat
+start_bridge.bat 192.168.88.1 --lat 48.8566 --lon 2.3522 --alt 35
+stop_bridge.bat
+```
+
 ## Stellarium setup
 
 1. **Enable the plugin** *(first time only)*
@@ -119,7 +139,12 @@ curl -X POST http://localhost:5002/api/location \
 ```
 dwarf32stellarium/
 ├── server.py               # bridge server (Stellarium TCP + Flask HTTP)
-└── dwarflab_controller.py  # DwarfLab WebSocket SDK
+├── dwarflab_controller.py  # DwarfLab WebSocket SDK (shared with dwarf_web)
+├── requirements.txt        # Python dependencies
+├── start_bridge.sh         # start wrapper (Linux/macOS)
+├── stop_bridge.sh          # stop wrapper  (Linux/macOS)
+├── start_bridge.bat        # start wrapper (Windows)
+└── stop_bridge.bat         # stop wrapper  (Windows)
 ```
 
 ## Controller / protocol

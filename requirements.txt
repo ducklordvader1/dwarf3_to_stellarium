@@ -1,3 +1,10 @@
-flask>=3.1.2
-requests>=2.32.5
-websocket-client>=1.8.0
+# Direct dependencies, pinned to known-good major versions.
+# Upper bounds prevent an untested major from silently entering a tagged
+# release build; raise them deliberately after testing.
+flask>=3.1.2,<4
+requests>=2.32.5,<3
+websocket-client>=1.8.0,<2
+
+# Security floors on sensitive transitive dependencies (pulled in via requests).
+certifi>=2026.10.18
+urllib3>=2.5.0

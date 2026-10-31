@@ -17,3 +17,8 @@ venv/
 # OS cruft
 .DS_Store
 Thumbs.db
+
+# PyInstaller build artefacts
+/build/
+/dist/
+*.pyc

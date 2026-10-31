@@ -1,0 +1,60 @@
+name: Build & Release
+
+# Build standalone one-folder binaries for Linux x64 and Windows x64 and attach
+# them to a GitHub Release whenever a version tag (vX.Y.Z) is pushed. Can also be
+# run manually from the Actions tab (workflow_dispatch) to test the build.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            name: linux-x64
+          - os: windows-latest
+            name: windows-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+
+      - name: Build with PyInstaller
+        run: pyinstaller --noconfirm --clean dwarf3_to_stellarium.spec
+
+      - name: Package (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cd dist
+          zip -r "../dwarf3_to_stellarium-${{ matrix.name }}.zip" dwarf3_to_stellarium
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Compress-Archive -Path dist/dwarf3_to_stellarium -DestinationPath "dwarf3_to_stellarium-${{ matrix.name }}.zip"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dwarf3_to_stellarium-${{ matrix.name }}
+          path: dwarf3_to_stellarium-${{ matrix.name }}.zip
+
+      - name: Attach to Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dwarf3_to_stellarium-${{ matrix.name }}.zip

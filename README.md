@@ -22,6 +22,42 @@ A lightweight **status dashboard** (Flask, port 5002) shows live telescope state
 > status dashboard, nor the REST API. Run it only on an internal, trusted
 > network — never expose it directly to the public internet.
 
+## Download (standalone, no Python needed)
+
+Prebuilt **one-folder** binaries for **Linux x64** and **Windows x64** are
+attached to each [GitHub Release](../../releases). They bundle Python and all
+dependencies - nothing to install.
+
+1. Download the zip for your platform (`dwarf3_to_stellarium-linux-x64.zip` or
+   `dwarf3_to_stellarium-windows-x64.zip`) and extract it anywhere.
+2. Run it, passing your telescope's IP (and ideally your location):
+
+   **Windows** - open a terminal in the extracted folder:
+   ```bat
+   cd dwarf3_to_stellarium
+   dwarf3_to_stellarium.exe 192.168.88.1 --lat 48.8566 --lon 2.3522
+   ```
+
+   **Linux** - from a terminal:
+   ```bash
+   cd dwarf3_to_stellarium
+   ./dwarf3_to_stellarium 192.168.88.1 --lat 48.8566 --lon 2.3522
+   ```
+3. Point Stellarium's Telescope Control plugin at `localhost:10001` (see
+   [Stellarium setup](#stellarium-setup)); the status dashboard is at
+   <http://localhost:5002>.
+
+All command-line options described under [Usage](#usage) work on the binary too.
+
+> **Windows SmartScreen / antivirus:** the binaries are unsigned, so Windows may
+> show a "Windows protected your PC" prompt (click *More info -> Run anyway*) and
+> some antivirus tools may flag them - a known false-positive pattern for
+> PyInstaller apps, not malware. Prefer to run from source? See below.
+
+The rest of this document describes **running from source**.
+
+---
+
 ## Requirements
 
 - Python 3.8+
